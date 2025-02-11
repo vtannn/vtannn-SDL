@@ -3,16 +3,6 @@
 #include<SDL_image.h>
 #include "defs.h"
 #include"graphics.h"
-void waitUntilKeypressed()
-{
-    SDL_Event e;
-    while(true)
-    {
-        if(SDL_PollEvent(&e)!=0&&
-           (e.type==SDL_KEYDOWN||e.type==SDL_QUIT)) return;
-        SDL_Delay(100);
-    }
-}
 int main(int argc,char* args[])
 {
     Graphics graphics;

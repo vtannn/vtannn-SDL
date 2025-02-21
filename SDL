@@ -2,20 +2,51 @@
 #include<SDL.h>
 #include<SDL_image.h>
 #include "defs.h"
-#include"graphics.h"
+#include "graphics.h"
+#include "logic.h"
+using namespace std;
+void waitUntilKeypressed()
+{
+    SDL_Event e;
+    while(true)
+    {
+        if(SDL_PollEvent(&e)!=0&&
+           (e.type==SDL_KEYDOWN||e.type==SDL_QUIT)) return;
+        SDL_Delay(100);
+    }
+}
+void processClick(int &x,int &y,Tictactoe& game)
+{
+    int clickedCol=(x-BOARD_X)/CELLSIZE;
+    int clickedRow=(y-BOARD_Y)/CELLSIZE;
+    x=clickedCol;
+    y=clickedRow;
+    game.move(clickedRow,clickedCol);
+}
 int main(int argc,char* args[])
 {
     Graphics graphics;
+    Tictactoe game;
+    game.init();
     graphics.init();
-
-    SDL_Texture* background=graphics.loadTexture("bikiniBottom.jpg");
-    graphics.prepareScene(background);
-    graphics.presentRenderer();
+    graphics.prepareBackground(game);
+    SDL_Event e;
+    int x,y;
+    while(!quit)
+    {
+        SDL_PollEvent(&e);
+        switch(e.type)
+        {
+            case SDL_QUIT : quit=true;break;
+            case SDL_MOUSEBUTTONDOWN : SDL_GetMouseState(&x,&y);
+            processClick(x,y,game);
+            graphics.render(game,x,y);
+            graphics.stopGame(game,x,y);
+            cout<<x<<" "<<y<<endl;
+            break;
+        }
+        SDL_Delay(100);
+    }
     waitUntilKeypressed();
-
-    SDL_Texture* sponge=graphics.loadTexture("Spongebob.png");
-    graphics.renderTexture(sponge,170,200);
-    graphics.presentRenderer();
-    waitUntilKeypressed();
-    graphics.quit();
+    graphics.QUIT();
 }

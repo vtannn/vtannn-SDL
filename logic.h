@@ -1,63 +1,42 @@
 #ifndef LOGIC_H
 #define LOGIC_H
-#define BOARDSIZE 3
-#define EMPTY_CELL 'T'
-#define O_CELL 'o'
-#define X_CELL 'x'
-struct Tictactoe
+#include "defs.h"
+#include<algorithm>
+using namespace std;
+struct Mouse
 {
-    char board[BOARDSIZE][BOARDSIZE];
-    char nextmove=O_CELL;
-    void init()
+    int x=100,y=SCREEN_HEIGHT/2-50;
+    int dx=0,dy=0;
+    int speed=0;
+    bool check=true;
+    void move()
     {
-        for(int i=0;i<BOARDSIZE;i++)
-        for(int j=0;j<BOARDSIZE;j++)
-        board[i][j]=EMPTY_CELL;
+        x+=dx;
+        y+=dy;
+        x=max(x,0);
+        y=max(y,0);
+        x=min(x,SCREEN_WIDTH-100);
+        y=min(y,SCREEN_HEIGHT-100);
     }
-    void move(int row,int col)
+    void turnNorth()
     {
-        if(row>=0&&col>=0&&row<BOARDSIZE&&col<BOARDSIZE)
-        {
-            if(board[col][row]==EMPTY_CELL)
-            {
-                board[col][row]=nextmove;
-                nextmove=(nextmove==O_CELL) ? X_CELL : O_CELL;
-            }
-        }
+        dy=-speed;
+        dx=0;
     }
-    int check()
+    void turnSouth()
     {
-        char x;int d=0;
-        for(int i=0;i<BOARDSIZE;i++)
-        {
-            d=1;
-            for(int j=1;j<BOARDSIZE;j++)
-            {
-                if(board[i][j]==board[i][j-1]&&board[i][j]!=EMPTY_CELL) d++;
-                else d=1;
-                if(d==3)
-                {
-                    if(board[i][j]==O_CELL) return 1;
-                    else return 2;
-                }
-            }
-        }
-
-        for(int j=0;j<BOARDSIZE;j++)
-        {
-            d=1;
-            for(int i=1;i<BOARDSIZE;i++)
-            {
-                if(board[i-1][j]==board[i][j]&&board[i][j]!=EMPTY_CELL) d++;
-                else d=1;
-                if(d==3)
-                {
-                    if(board[i][j]==O_CELL) return 1;
-                    else return 2;
-                }
-            }
-        }
-        return 0;
+        dy=speed;
+        dx=0;
+    }
+    void turnWest()
+    {
+        dx=-speed;
+        dy=0;
+    }
+    void turnEast()
+    {
+        dx=speed;
+        dy=0;
     }
 };
 #endif // LOGIC_H

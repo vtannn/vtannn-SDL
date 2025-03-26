@@ -15,38 +15,76 @@ void waitUntilKeypressed()
         SDL_Delay(100);
     }
 }
-void processClick(int &x,int &y,Tictactoe& game)
-{
-    int clickedCol=(x-BOARD_X)/CELLSIZE;
-    int clickedRow=(y-BOARD_Y)/CELLSIZE;
-    x=clickedCol;
-    y=clickedRow;
-    game.move(clickedRow,clickedCol);
-}
 int main(int argc,char* args[])
 {
     Graphics graphics;
-    Tictactoe game;
-    game.init();
     graphics.init();
-    graphics.prepareBackground(game);
+
+    SDL_Texture *background=graphics.loadTexture("fbimg/bg.PNG");
+    ScrollingBackground bgr;
+    bgr.setTexture(background);
+
+    ScrollingBackground ground;
+    ground.setTexture(graphics.loadTexture("fbimg/ground.PNG"));
+
+    Mouse mouse;
+
+    Sprite bird;
+    bird.clips.push_back(graphics.bird1);
+    bird.clips.push_back(graphics.bird2);
+    bird.clips.push_back(graphics.bird3);
+
     SDL_Event e;
     int x,y;
     while(!quit)
     {
-        SDL_PollEvent(&e);
-        switch(e.type)
+        //jump
+        if(SDL_PollEvent(&e))
         {
-            case SDL_QUIT : quit=true;break;
-            case SDL_MOUSEBUTTONDOWN : SDL_GetMouseState(&x,&y);
-            processClick(x,y,game);
-            graphics.render(game,x,y);
-            graphics.stopGame(game,x,y);
-            cout<<x<<" "<<y<<endl;
-            break;
+            if(e.type==SDL_QUIT) quit=true;
+            if(e.type==SDL_KEYDOWN)
+            {
+                if(!flying) flying=true;
+                mouse.speed=-25;
+                mouse.check=false;
+            }
+            else mouse.check=true;
         }
-        SDL_Delay(100);
+        if(mouse.y==620) game_over=true;
+        if(!game_over)
+        {
+            //gravity
+            if(flying)
+            {
+                mouse.speed+=5;
+                mouse.speed=min(mouse.speed,10);
+                mouse.turnSouth();
+                mouse.move();
+                mouse.y=min(mouse.y,620);
+            }
+            //scroll
+            bgr.scroll(5);
+            ground.scroll(5);
+            bird.tick();
+            //render
+            SDL_RenderClear(graphics.renderer);
+            graphics.renderBackground(bgr,0);
+            graphics.renderBackground(ground,620);
+            graphics.renderBIRD(mouse.x,mouse.y-36,bird,mouse.speed);
+        }
+        else
+        {
+            SDL_RenderClear(graphics.renderer);
+            graphics.renderBackground(bgr,0);
+            graphics.renderBackground(ground,620);
+            graphics.renderBIRD(mouse.x,mouse.y-36,bird,90);
+        }
+        graphics.presentRenderer();
+        SDL_Delay(40);
     }
+    SDL_DestroyTexture(graphics.bird1);
+    SDL_DestroyTexture(background);
+
     waitUntilKeypressed();
     graphics.QUIT();
 }

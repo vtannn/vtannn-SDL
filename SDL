@@ -4,6 +4,9 @@
 #include "defs.h"
 #include "graphics.h"
 #include "logic.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 using namespace std;
 void waitUntilKeypressed()
 {
@@ -17,6 +20,7 @@ void waitUntilKeypressed()
 }
 int main(int argc,char* args[])
 {
+    srand(time(NULL));
     Graphics graphics;
     graphics.init();
 
@@ -34,11 +38,14 @@ int main(int argc,char* args[])
     bird.clips.push_back(graphics.bird2);
     bird.clips.push_back(graphics.bird3);
 
+    pipe=graphics.loadTexture("fbimg/pipe.PNG");
+    Uint32 last_pipe=SDL_GetTicks()-pipe_frequency;
+
     SDL_Event e;
     int x,y;
     while(!quit)
     {
-        //jump
+        ///jump
         if(SDL_PollEvent(&e))
         {
             if(e.type==SDL_QUIT) quit=true;
@@ -53,24 +60,46 @@ int main(int argc,char* args[])
         if(mouse.y==620) game_over=true;
         if(!game_over)
         {
-            //gravity
+            ///gravity
             if(flying)
             {
-                mouse.speed+=5;
-                mouse.speed=min(mouse.speed,10);
+                mouse.speed+=4;
+                mouse.speed=min(mouse.speed,20);
                 mouse.turnSouth();
                 mouse.move();
                 mouse.y=min(mouse.y,620);
             }
-            //scroll
-            bgr.scroll(5);
-            ground.scroll(5);
+            ///scroll
+            bgr.scroll();
+            ground.scroll();
             bird.tick();
-            //render
+            ///render
             SDL_RenderClear(graphics.renderer);
+            //background
             graphics.renderBackground(bgr,0);
             graphics.renderBackground(ground,620);
+            //bird
             graphics.renderBIRD(mouse.x,mouse.y-36,bird,mouse.speed);
+            //pipe
+            if(flying)
+            {
+                Pipes_delete();
+                Pipes_update();
+                Pipes_draw(graphics);
+                Uint32 time_now=SDL_GetTicks();
+                if(time_now-last_pipe>pipe_frequency)
+                {
+                    Pipe next_pipe;
+                    next_pipe={pipe,SCREEN_WIDTH,pipe_gap};
+                    //random
+                    int a=-75,b=75;
+                    int random=rand()%(b-a+1)+a;
+                    next_pipe.height=random;
+                    cout<<random<<endl;
+                    Pipes.push_back(next_pipe);
+                    last_pipe=time_now;
+                }
+            }
         }
         else
         {
@@ -85,6 +114,6 @@ int main(int argc,char* args[])
     SDL_DestroyTexture(graphics.bird1);
     SDL_DestroyTexture(background);
 
-    waitUntilKeypressed();
+    //waitUntilKeypressed();
     graphics.QUIT();
 }

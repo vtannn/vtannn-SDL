@@ -2,10 +2,9 @@
 #define LOGIC_H
 #include "defs.h"
 #include<algorithm>
-using namespace std;
 struct Mouse
 {
-    int x=100,y=SCREEN_HEIGHT/2-50;
+    int x=100,y=SCREEN_HEIGHT/2-100;
     int dx=0,dy=0;
     int speed=0;
     bool check=true;

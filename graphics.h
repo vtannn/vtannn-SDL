@@ -162,6 +162,12 @@ void Pipes_draw(Graphics graphics)
         Pipe pipe=Pipes[i];
         graphics.renderPipe(pipe,170,1);
         graphics.renderPipe(pipe,0,-1);
+//        SDL_SetRenderDrawColor(graphics.renderer,255,0,0,255);
+//        SDL_Rect rect={pipe.x,170+pipe_gap-pipe.height,62,300+pipe.height};
+//        SDL_RenderDrawRect(graphics.renderer,&rect);
+//        SDL_Rect rect2={pipe.x,0,62,150-pipe.height};
+//        SDL_RenderDrawRect(graphics.renderer,&rect2);
     }
 }
+
 #endif // GRAPHICS_H

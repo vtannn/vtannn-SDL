@@ -18,6 +18,18 @@ void waitUntilKeypressed()
         SDL_Delay(100);
     }
 }
+bool check_Collision(Mouse mouse)
+{
+    SDL_Rect bird_rect={mouse.x,mouse.y-36,51,36};
+    for(int i=0;i<Pipes.size();i++)
+    {
+        Pipe pipe=Pipes[i];
+        SDL_Rect pipe_bot_rect={pipe.x,170+pipe_gap-pipe.height,62,300+pipe.height};
+        SDL_Rect pipe_top_rect={pipe.x,0,62,150-pipe.height};
+        if(SDL_HasIntersection(&bird_rect,&pipe_bot_rect)||SDL_HasIntersection(&bird_rect,&pipe_top_rect)) return true;
+    }
+    return false;
+}
 int main(int argc,char* args[])
 {
     srand(time(NULL));
@@ -45,10 +57,17 @@ int main(int argc,char* args[])
     int x,y;
     while(!quit)
     {
-        ///jump
         if(SDL_PollEvent(&e))
         {
             if(e.type==SDL_QUIT) quit=true;
+        }
+        ///check collision
+        if(check_Collision(mouse)) game_over=true;
+        ///jump
+        if(mouse.y==620) game_over=true;
+        if(!game_over)
+        {
+            ///check flying
             if(e.type==SDL_KEYDOWN)
             {
                 if(!flying) flying=true;
@@ -56,10 +75,6 @@ int main(int argc,char* args[])
                 mouse.check=false;
             }
             else mouse.check=true;
-        }
-        if(mouse.y==620) game_over=true;
-        if(!game_over)
-        {
             ///gravity
             if(flying)
             {
@@ -80,22 +95,24 @@ int main(int argc,char* args[])
             graphics.renderBackground(ground,620);
             //bird
             graphics.renderBIRD(mouse.x,mouse.y-36,bird,mouse.speed);
+//            SDL_SetRenderDrawColor(graphics.renderer,255,0,0,255);
+//            SDL_Rect rect={mouse.x,mouse.y-36,51,36};
+//            SDL_RenderDrawRect(graphics.renderer,&rect);
             //pipe
-            if(flying)
+            ///if(flying)
             {
                 Pipes_delete();
                 Pipes_update();
                 Pipes_draw(graphics);
                 Uint32 time_now=SDL_GetTicks();
-                if(time_now-last_pipe>pipe_frequency)
+                if(time_now-last_pipe>=pipe_frequency)
                 {
                     Pipe next_pipe;
-                    next_pipe={pipe,SCREEN_WIDTH,pipe_gap};
+                    next_pipe={pipe,SCREEN_WIDTH,0};
                     //random
                     int a=-75,b=75;
                     int random=rand()%(b-a+1)+a;
                     next_pipe.height=random;
-                    cout<<random<<endl;
                     Pipes.push_back(next_pipe);
                     last_pipe=time_now;
                 }
@@ -103,10 +120,31 @@ int main(int argc,char* args[])
         }
         else
         {
+            ///gravity
+            mouse.speed+=2;
+            mouse.turnSouth();
+            mouse.move();
+            ///render
             SDL_RenderClear(graphics.renderer);
             graphics.renderBackground(bgr,0);
             graphics.renderBackground(ground,620);
             graphics.renderBIRD(mouse.x,mouse.y-36,bird,90);
+            ///pipe
+            Pipes_delete();
+            //Pipes_update();
+            Pipes_draw(graphics);
+            Uint32 time_now=SDL_GetTicks();
+            if(time_now-last_pipe>=pipe_frequency)
+            {
+                Pipe next_pipe;
+                next_pipe={pipe,SCREEN_WIDTH,0};
+                //random
+                int a=-75,b=75;
+                int random=rand()%(b-a+1)+a;
+                next_pipe.height=random;
+                Pipes.push_back(next_pipe);
+                last_pipe=time_now;
+            }
         }
         graphics.presentRenderer();
         SDL_Delay(40);

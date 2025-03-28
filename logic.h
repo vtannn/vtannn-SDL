@@ -12,10 +12,10 @@ struct Mouse
     {
         x+=dx;
         y+=dy;
-        x=max(x,0);
-        y=max(y,0);
+        x=max(x,51);
+        y=max(y,36);
         x=min(x,SCREEN_WIDTH-100);
-        y=min(y,SCREEN_HEIGHT-100);
+        y=min(y,620);
     }
     void turnNorth()
     {

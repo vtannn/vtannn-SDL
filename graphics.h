@@ -169,5 +169,5 @@ void Pipes_draw(Graphics graphics)
 //        SDL_RenderDrawRect(graphics.renderer,&rect2);
     }
 }
-
+//
 #endif // GRAPHICS_H

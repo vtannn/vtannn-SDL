@@ -1,12 +1,15 @@
 #include<iostream>
 #include<SDL.h>
 #include<SDL_image.h>
+#include<SDL_ttf.h>
+#include<SDL_mixer.h>
 #include "defs.h"
 #include "graphics.h"
 #include "logic.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include<string>
 using namespace std;
 void waitUntilKeypressed()
 {
@@ -30,9 +33,23 @@ bool check_Collision(Mouse mouse)
     }
     return false;
 }
+void check_pass_Pipe(Mouse mouse)
+{
+    for(int i=0;i<Pipes.size();i++)
+    {
+        Pipe &pipe=Pipes[i];
+        if(mouse.x>pipe.x+31&&pipe.pass==false)
+        {
+            score++;
+            pipe.pass=true;
+            break;
+        }
+    }
+}
 int main(int argc,char* args[])
 {
     srand(time(NULL));
+
     Graphics graphics;
     graphics.init();
 
@@ -53,6 +70,8 @@ int main(int argc,char* args[])
     pipe=graphics.loadTexture("fbimg/pipe.PNG");
     Uint32 last_pipe=SDL_GetTicks()-pipe_frequency;
 
+    SDL_Color color={255,255,255,0};
+
     SDL_Event e;
     int x,y;
     while(!quit)
@@ -61,13 +80,38 @@ int main(int argc,char* args[])
         {
             if(e.type==SDL_QUIT) quit=true;
         }
+        ///check score
+        check_pass_Pipe(mouse);
+        //cerr<<score<<endl;
         ///check collision
         if(check_Collision(mouse)) game_over=true;
-        ///jump
         if(mouse.y==620) game_over=true;
+        ///gravity
+        if(flying)
+        {
+            mouse.speed+=4;
+            mouse.speed=min(mouse.speed,20);
+            mouse.turnSouth();
+            mouse.move();
+            mouse.y=min(mouse.y,620);
+        }
+        ///render
+        //background
+        SDL_RenderClear(graphics.renderer);
+        graphics.renderBackground(bgr,0);
+        graphics.renderBackground(ground,620);
+        //pipe
+        Pipes_draw(graphics);
+        //score
+        string score_string=to_string(score);
+        char *score_text=new char [score_string.size()];
+        for(int i=0;i<score_string.size();i++)
+            score_text[i]=score_string[i];
+        score_text[score_string.size()]='\0';
+        graphics.renderText(score_text,SCREEN_WIDTH/2-10*(score_string.size()-1),10,color);
         if(!game_over)
         {
-            ///check flying
+            ///jump
             if(e.type==SDL_KEYDOWN)
             {
                 if(!flying) flying=true;
@@ -75,40 +119,26 @@ int main(int argc,char* args[])
                 mouse.check=false;
             }
             else mouse.check=true;
-            ///gravity
-            if(flying)
-            {
-                mouse.speed+=4;
-                mouse.speed=min(mouse.speed,20);
-                mouse.turnSouth();
-                mouse.move();
-                mouse.y=min(mouse.y,620);
-            }
             ///scroll
             bgr.scroll();
             ground.scroll();
             bird.tick();
             ///render
-            SDL_RenderClear(graphics.renderer);
-            //background
-            graphics.renderBackground(bgr,0);
-            graphics.renderBackground(ground,620);
             //bird
             graphics.renderBIRD(mouse.x,mouse.y-36,bird,mouse.speed);
 //            SDL_SetRenderDrawColor(graphics.renderer,255,0,0,255);
 //            SDL_Rect rect={mouse.x,mouse.y-36,51,36};
 //            SDL_RenderDrawRect(graphics.renderer,&rect);
             //pipe
-            ///if(flying)
+            if(flying)
             {
                 Pipes_delete();
                 Pipes_update();
-                Pipes_draw(graphics);
                 Uint32 time_now=SDL_GetTicks();
                 if(time_now-last_pipe>=pipe_frequency)
                 {
                     Pipe next_pipe;
-                    next_pipe={pipe,SCREEN_WIDTH,0};
+                    next_pipe={pipe,SCREEN_WIDTH,0,false};
                     //random
                     int a=-75,b=75;
                     int random=rand()%(b-a+1)+a;
@@ -120,38 +150,19 @@ int main(int argc,char* args[])
         }
         else
         {
-            ///gravity
-            mouse.speed+=2;
-            mouse.turnSouth();
-            mouse.move();
             ///render
-            SDL_RenderClear(graphics.renderer);
-            graphics.renderBackground(bgr,0);
-            graphics.renderBackground(ground,620);
             graphics.renderBIRD(mouse.x,mouse.y-36,bird,90);
-            ///pipe
-            Pipes_delete();
-            //Pipes_update();
-            Pipes_draw(graphics);
-            Uint32 time_now=SDL_GetTicks();
-            if(time_now-last_pipe>=pipe_frequency)
-            {
-                Pipe next_pipe;
-                next_pipe={pipe,SCREEN_WIDTH,0};
-                //random
-                int a=-75,b=75;
-                int random=rand()%(b-a+1)+a;
-                next_pipe.height=random;
-                Pipes.push_back(next_pipe);
-                last_pipe=time_now;
-            }
         }
         graphics.presentRenderer();
         SDL_Delay(40);
     }
     SDL_DestroyTexture(graphics.bird1);
+    SDL_DestroyTexture(graphics.bird2);
+    SDL_DestroyTexture(graphics.bird3);
     SDL_DestroyTexture(background);
-
+    SDL_DestroyTexture(ground.texture);
+    SDL_DestroyTexture(bgr.texture);
+    SDL_DestroyTexture(pipe);
     //waitUntilKeypressed();
     graphics.QUIT();
 }

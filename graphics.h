@@ -9,6 +9,7 @@ struct Pipe
     SDL_Texture* texture;
     int x=SCREEN_WIDTH;
     int height;
+    bool pass;
     void update()
     {
         if(x>=-300) x-=game_speed;
@@ -48,6 +49,7 @@ struct Graphics
     SDL_Window* window;
     SDL_Renderer* renderer;
     SDL_Texture* bird1,*bird2,*bird3;
+    TTF_Font *font;
     void logErrorAndExit(const char* msg,const char* error)
     {
         SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION,SDL_LOG_PRIORITY_ERROR,"%s : %s",msg,error);
@@ -65,6 +67,10 @@ struct Graphics
         if(renderer==nullptr) logErrorAndExit("CreateRenderer",SDL_GetError());
         SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY,"linear");
         SDL_RenderSetLogicalSize(renderer,SCREEN_WIDTH,SCREEN_HEIGHT);
+        if (TTF_Init()==-1)
+        {
+            logErrorAndExit("SDL_ttf could not initialize! SDL_ttf Error: ",TTF_GetError());
+        }
     }
     void prepareScene(SDL_Texture* background)
     {
@@ -82,12 +88,22 @@ struct Graphics
         if(texture==nullptr) logErrorAndExit("CreateTexture",IMG_GetError());
         return texture;
      }
+     TTF_Font* loadFont(const char* path,int size)
+     {
+         SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION,SDL_LOG_PRIORITY_INFO,"Loading %s",path);
+         TTF_Font* gFont=TTF_OpenFont(path,size);
+         if(gFont==nullptr)
+         {
+             logErrorAndExit("Load font : %s",TTF_GetError());
+         }
+     }
      void init()
      {
         initSDL();
         bird1=loadTexture("fbimg/bird1.PNG");
         bird2=loadTexture("fbimg/bird2.PNG");
         bird3=loadTexture("fbimg/bird3.PNG");
+        font=loadFont("font/BAUHS93.TTF",60);
      }
      void renderTexture(SDL_Texture* texture,int x,int y)
      {
@@ -124,6 +140,7 @@ struct Graphics
          SDL_DestroyRenderer(renderer);
          IMG_Quit();
          SDL_Quit();
+         TTF_Quit();
      }
      void renderBIRD(int x,int y,Sprite &sprite,int angle)
      {
@@ -133,6 +150,20 @@ struct Graphics
      {
          renderTexture(bgr.texture,bgr.scrollingOffset,x);
          renderTexture(bgr.texture,bgr.scrollingOffset-bgr.width,x);
+     }
+     void renderText(const char* text,int x,int y,SDL_Color textColor)
+     {
+        SDL_Surface *surface=TTF_RenderText_Solid(font,text,textColor);
+        if(surface==nullptr)
+        {
+        logErrorAndExit("Render text surface %s",TTF_GetError());
+        }
+        SDL_Texture* text_texture=SDL_CreateTextureFromSurface(renderer,surface);
+        if(text_texture==nullptr)
+        {
+            logErrorAndExit("Create texture from surface %s",SDL_GetError());
+        }
+        renderTexture(text_texture,x,y);
      }
 };
 vector<Pipe>Pipes;
@@ -169,5 +200,4 @@ void Pipes_draw(Graphics graphics)
 //        SDL_RenderDrawRect(graphics.renderer,&rect2);
     }
 }
-//
 #endif // GRAPHICS_H

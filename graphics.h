@@ -48,8 +48,9 @@ struct Graphics
 {
     SDL_Window* window;
     SDL_Renderer* renderer;
-    SDL_Texture* bird1,*bird2,*bird3;
+    SDL_Texture* bird1,*bird2,*bird3,*game_over,*board;
     TTF_Font *font_score,*font_board;
+    Mix_Chunk *point,*flap,*die,*highscore,*hit;
     void logErrorAndExit(const char* msg,const char* error)
     {
         SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION,SDL_LOG_PRIORITY_ERROR,"%s : %s",msg,error);
@@ -71,6 +72,11 @@ struct Graphics
         {
             logErrorAndExit("SDL_ttf could not initialize! SDL_ttf Error: ",TTF_GetError());
         }
+        if( Mix_OpenAudio( 44100, MIX_DEFAULT_FORMAT, 2, 2048 ) < 0 )
+        {
+            logErrorAndExit( "SDL_mixer could not initialize! SDL_mixer Error: %s\n",
+            Mix_GetError() );
+        }
     }
     void prepareScene(SDL_Texture* background)
     {
@@ -90,21 +96,38 @@ struct Graphics
      }
      TTF_Font* loadFont(const char* path,int size)
      {
-         SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION,SDL_LOG_PRIORITY_INFO,"Loading %s",path);
-         TTF_Font* gFont=TTF_OpenFont(path,size);
-         if(gFont==nullptr)
+         TTF_Font* font=TTF_OpenFont(path,size);
+         if(font==nullptr)
          {
              logErrorAndExit("Load font : %s",TTF_GetError());
          }
+         SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION,SDL_LOG_PRIORITY_INFO,"Loading Font %s",path);
+         return font;
      }
+     Mix_Chunk* loadSound(const char* path)
+     {
+        Mix_Chunk* chunk = Mix_LoadWAV(path);
+        if (chunk == nullptr)
+        {
+            logErrorAndExit("Could not load sound! SDL_mixer Error: %s", Mix_GetError());
+        }
+        return chunk;
+    }
      void init()
      {
         initSDL();
         bird1=loadTexture("fbimg/bird1.PNG");
         bird2=loadTexture("fbimg/bird2.PNG");
         bird3=loadTexture("fbimg/bird3.PNG");
+        board=loadTexture("fbimg/scoreboard.PNG");
+        game_over=loadTexture("fbimg/gameover.PNG");
         font_score=loadFont("font/fBirdFont.TTF",60);
         font_board=loadFont("font/fBirdFont.TTF",40);
+        point=loadSound("sound/point.WAV");
+        flap=loadSound("sound/flap.WAV");
+        die=loadSound("sound/die.WAV");
+        highscore=loadSound("sound/highscore.WAV");
+        hit=loadSound("sound/hit.WAV");
      }
      void renderTexture(SDL_Texture* texture,int x,int y)
      {
@@ -142,6 +165,7 @@ struct Graphics
          IMG_Quit();
          SDL_Quit();
          TTF_Quit();
+         Mix_Quit();
      }
      void renderBIRD(int x,int y,Sprite &sprite,int angle)
      {
@@ -157,7 +181,7 @@ struct Graphics
         SDL_Surface *surface=TTF_RenderText_Solid(font,text,textColor);
         if(surface==nullptr)
         {
-        logErrorAndExit("Render text surface %s",TTF_GetError());
+            logErrorAndExit("Render text surface %s",TTF_GetError());
         }
         SDL_Texture* text_texture=SDL_CreateTextureFromSurface(renderer,surface);
         if(text_texture==nullptr)
@@ -165,7 +189,17 @@ struct Graphics
             logErrorAndExit("Create texture from surface %s",SDL_GetError());
         }
         renderTexture(text_texture,x,y);
+        SDL_FreeSurface(surface);
+        SDL_DestroyTexture(text_texture);
      }
+     void playMusic(Mix_Chunk* gChunk)
+     {
+        if (gChunk != nullptr)
+        {
+            Mix_PlayChannel(-1,gChunk,0);
+        }
+     }
+
 };
 vector<Pipe>Pipes;
 bool ss(Pipe x,Pipe y)

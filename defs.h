@@ -1,6 +1,5 @@
 #ifndef DEFS_H
 #define DEFS_H
-#include<string>
 using namespace std;
 const int SCREEN_WIDTH=700;
 const int SCREEN_HEIGHT=800;
@@ -12,6 +11,7 @@ int pipe_gap=150;
 int game_speed=5;
 int score=0;
 int high_score=0;
+bool die=false,congratulation=false,hit=false;
 Uint32 pipe_frequency=3000;
 Uint32 time_now;
 SDL_Texture *pipe;

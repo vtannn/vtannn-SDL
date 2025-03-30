@@ -49,7 +49,7 @@ struct Graphics
     SDL_Window* window;
     SDL_Renderer* renderer;
     SDL_Texture* bird1,*bird2,*bird3;
-    TTF_Font *font;
+    TTF_Font *font_score,*font_board;
     void logErrorAndExit(const char* msg,const char* error)
     {
         SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION,SDL_LOG_PRIORITY_ERROR,"%s : %s",msg,error);
@@ -103,7 +103,8 @@ struct Graphics
         bird1=loadTexture("fbimg/bird1.PNG");
         bird2=loadTexture("fbimg/bird2.PNG");
         bird3=loadTexture("fbimg/bird3.PNG");
-        font=loadFont("font/BAUHS93.TTF",60);
+        font_score=loadFont("font/fBirdFont.TTF",60);
+        font_board=loadFont("font/fBirdFont.TTF",40);
      }
      void renderTexture(SDL_Texture* texture,int x,int y)
      {
@@ -151,7 +152,7 @@ struct Graphics
          renderTexture(bgr.texture,bgr.scrollingOffset,x);
          renderTexture(bgr.texture,bgr.scrollingOffset-bgr.width,x);
      }
-     void renderText(const char* text,int x,int y,SDL_Color textColor)
+     void renderText(const char* text,int x,int y,SDL_Color textColor,TTF_Font *font)
      {
         SDL_Surface *surface=TTF_RenderText_Solid(font,text,textColor);
         if(surface==nullptr)

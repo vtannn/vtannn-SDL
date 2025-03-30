@@ -33,7 +33,7 @@ bool check_Collision(Mouse bird_mouse)
     }
     return false;
 }
-void check_pass_Pipe(Mouse bird_mouse)
+void check_pass_Pipe(Mouse bird_mouse,Graphics graphics)
 {
     for(int i=0;i<Pipes.size();i++)
     {
@@ -42,13 +42,14 @@ void check_pass_Pipe(Mouse bird_mouse)
         {
             score++;
             pipe.pass=true;
+            //sound
+            graphics.playMusic(graphics.point);
             break;
         }
     }
 }
-char *convert_into_pointer(int number,char *score_text)
+char *convert_into_pointer(string score_string,char *score_text)
 {
-    string score_string=to_string(score);
     score_text=new char [score_string.size()];
     for(int i=0;i<score_string.size();i++)
         score_text[i]=score_string[i];
@@ -59,6 +60,21 @@ bool check_Click_Restart(Mouse mouse,SDL_Rect rect)
 {
     if(mouse.x>rect.x&&mouse.x<rect.x+rect.w&&mouse.y>rect.y&&mouse.y<rect.y+rect.h) return true;
     return false;
+}
+void DestroyTexture(SDL_Texture* &texture)
+{
+    SDL_DestroyTexture(texture);
+    texture=nullptr;
+}
+void CloseFont(TTF_Font* &font)
+{
+    TTF_CloseFont(font);
+    font=nullptr;
+}
+void FreeChunk(Mix_Chunk* &chunk)
+{
+    Mix_FreeChunk(chunk);
+    chunk=nullptr;
 }
 int main(int argc,char* args[])
 {
@@ -84,11 +100,11 @@ int main(int argc,char* args[])
     pipe=graphics.loadTexture("fbimg/pipe.PNG");
     Uint32 last_pipe=SDL_GetTicks()-pipe_frequency;
 
-    SDL_Color color={255,255,255,0};
+    SDL_Color color_white={255,255,255,0},color_pink={255,0,255,0},color_red={255,0,0,0};
 
     Mouse restart_mouse;
     SDL_Texture *restart_texture=graphics.loadTexture("fbimg/restart.PNG");
-    SDL_Rect restart_rect={SCREEN_WIDTH/2-60,SCREEN_HEIGHT/2,120,42};
+    SDL_Rect restart_rect={SCREEN_WIDTH/2-60,SCREEN_HEIGHT/2+20,120,42};
 
     SDL_Event e;
     int x,y;
@@ -98,27 +114,29 @@ int main(int argc,char* args[])
         {
             if(e.type==SDL_QUIT) quit=true;
         }
-        ///check score
-        check_pass_Pipe(bird_mouse);
+        ///check score and high score
+        check_pass_Pipe(bird_mouse,graphics);
+        high_score=max(high_score,score);
         //cerr<<score<<endl;
         ///check collision
-        if(check_Collision(bird_mouse)) game_over=true;
-        if(bird_mouse.y==620) game_over=true;
-        ///restart
-        SDL_GetMouseState(&restart_mouse.x,&restart_mouse.y);
-        if(check_Click_Restart(restart_mouse,restart_rect))
+        if(check_Collision(bird_mouse))
         {
-            if(e.type==SDL_MOUSEBUTTONDOWN)
+            game_over=true;
+            //sound
+            if(!die)
             {
-                if(e.button.button==SDL_BUTTON_LEFT)
-                {
-                    //reset game
-                    game_over=false;
-                    bird_mouse={100,SCREEN_HEIGHT/2-100};
-                    Pipes.clear();
-                    flying=false;
-                    score=0;
-                }
+                graphics.playMusic(graphics.die);
+                die=true;
+            }
+        }
+        if(bird_mouse.y==620)
+        {
+            game_over=true;
+            //sound
+            if(!hit)
+            {
+                graphics.playMusic(graphics.hit);
+                hit=true;
             }
         }
         ///gravity
@@ -138,8 +156,8 @@ int main(int argc,char* args[])
         //pipe
         Pipes_draw(graphics);
         //score
-        score_text=convert_into_pointer(score,score_text);
-        graphics.renderText(score_text,SCREEN_WIDTH/2-10*(strlen(score_text)),10,color);
+        score_text=convert_into_pointer(to_string(score),score_text);
+        graphics.renderText(score_text,SCREEN_WIDTH/2-10*(strlen(score_text)),10,color_white,graphics.font_score);
         if(!game_over)
         {
             ///jump
@@ -148,6 +166,8 @@ int main(int argc,char* args[])
                 if(!flying) flying=true;
                 bird_mouse.speed=-25;
                 bird_mouse.check=false;
+                //sound
+                graphics.playMusic(graphics.flap);
             }
             else bird_mouse.check=true;
             ///scroll
@@ -184,19 +204,70 @@ int main(int argc,char* args[])
             ///render
             //bird
             graphics.renderBIRD(bird_mouse.x,bird_mouse.y-36,bird,90);
+            //game over
+            graphics.renderTexture(graphics.game_over,SCREEN_WIDTH/2-160,SCREEN_HEIGHT/2-250);
+            //score board
+            graphics.renderTexture(graphics.board,SCREEN_WIDTH/2-80,SCREEN_HEIGHT/2-215);
+            //score
+            char *score_board=convert_into_pointer("SCORE",score_board);
+            graphics.renderText(score_board,SCREEN_WIDTH/2-55,SCREEN_HEIGHT/2-180,color_pink,graphics.font_board);
+
+            score_board=convert_into_pointer(to_string(score),score_board);
+            graphics.renderText(score_board,SCREEN_WIDTH/2-strlen(score_board)*8,SCREEN_HEIGHT/2-130,color_pink,graphics.font_board);
+            //high score
+            score_board=convert_into_pointer("BEST",score_board);
+            graphics.renderText(score_board,SCREEN_WIDTH/2-44,SCREEN_HEIGHT/2-80,color_red,graphics.font_board);
+
+            score_board=convert_into_pointer(to_string(high_score),score_board);
+            graphics.renderText(score_board,SCREEN_WIDTH/2-strlen(score_board)*8,SCREEN_HEIGHT/2-30,color_red,graphics.font_board);
             //restart
             graphics.renderTexture(restart_texture,restart_rect.x,restart_rect.y);
+            //sound
+            if(score==high_score&&congratulation==false)
+            {
+                graphics.playMusic(graphics.highscore);
+                congratulation=true;
+            }
+            ///restart
+            SDL_GetMouseState(&restart_mouse.x,&restart_mouse.y);
+            if(check_Click_Restart(restart_mouse,restart_rect))
+            {
+                if(e.type==SDL_MOUSEBUTTONDOWN)
+                {
+                    if(e.button.button==SDL_BUTTON_LEFT)
+                    {
+                        //reset game
+                        game_over=false;
+                        bird_mouse={100,SCREEN_HEIGHT/2-100};
+                        Pipes.clear();
+                        flying=false;
+                        die=false;
+                        congratulation=false;
+                        hit=false;
+                        score=0;
+                        Mix_Pause(-1);
+                    }
+                }
+            }
         }
         graphics.presentRenderer();
         SDL_Delay(40);
     }
-    SDL_DestroyTexture(graphics.bird1);
-    SDL_DestroyTexture(graphics.bird2);
-    SDL_DestroyTexture(graphics.bird3);
-    SDL_DestroyTexture(background);
-    SDL_DestroyTexture(ground.texture);
-    SDL_DestroyTexture(bgr.texture);
-    SDL_DestroyTexture(pipe);
-    //waitUntilKeypressed();
+    DestroyTexture(graphics.bird1);
+    DestroyTexture(graphics.bird2);
+    DestroyTexture(graphics.bird3);
+    DestroyTexture(graphics.board);
+    DestroyTexture(graphics.game_over);
+    CloseFont(graphics.font_board);
+    CloseFont(graphics.font_score);
+    FreeChunk(graphics.hit);
+    FreeChunk(graphics.flap);
+    FreeChunk(graphics.die);
+    FreeChunk(graphics.point);
+    FreeChunk(graphics.highscore);
+    DestroyTexture(background);
+    DestroyTexture(ground.texture);
+    DestroyTexture(bgr.texture);
+    DestroyTexture(pipe);
     graphics.QUIT();
 }

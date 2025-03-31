@@ -4,10 +4,11 @@
 #include<algorithm>
 struct Mouse
 {
-    int x=100,y=SCREEN_HEIGHT/2-100;
+    int x,y;
     int dx=0,dy=0;
     int speed=0;
-    bool check=true;
+    int up_down=1;
+    int wait=0;
     void move()
     {
         x+=dx;
@@ -16,6 +17,16 @@ struct Mouse
         y=max(y,36);
         x=min(x,SCREEN_WIDTH-100);
         y=min(y,620);
+    }
+    void winding()
+    {
+        if(wait>=winding_cooldown)
+        {
+            y+=up_down*10;
+            up_down*=-1;
+            wait=0;
+        }
+        wait++;
     }
     void turnNorth()
     {

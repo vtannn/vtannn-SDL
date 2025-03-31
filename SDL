@@ -56,7 +56,7 @@ char *convert_into_pointer(string score_string,char *score_text)
     score_text[score_string.size()]='\0';
     return score_text;
 }
-bool check_Click_Restart(Mouse mouse,SDL_Rect rect)
+bool check_Click(Mouse mouse,SDL_Rect rect)
 {
     if(mouse.x>rect.x&&mouse.x<rect.x+rect.w&&mouse.y>rect.y&&mouse.y<rect.y+rect.h) return true;
     return false;
@@ -91,6 +91,7 @@ int main(int argc,char* args[])
     ground.setTexture(graphics.loadTexture("fbimg/ground.PNG"));
 
     Mouse bird_mouse;
+    bird_mouse={326,282};
 
     Sprite bird;
     bird.clips.push_back(graphics.bird1);
@@ -105,6 +106,11 @@ int main(int argc,char* args[])
     Mouse restart_mouse;
     SDL_Texture *restart_texture=graphics.loadTexture("fbimg/restart.PNG");
     SDL_Rect restart_rect={SCREEN_WIDTH/2-60,SCREEN_HEIGHT/2+20,120,42};
+
+    Mouse menu_mouse;
+    SDL_Rect menu_rect={265,497,200,112};
+
+    Mouse flappybird_mouse={159,131},ready_mouse={275,310},tap_mouse={290,367};
 
     SDL_Event e;
     int x,y;
@@ -153,23 +159,52 @@ int main(int argc,char* args[])
         SDL_RenderClear(graphics.renderer);
         graphics.renderBackground(bgr,0);
         graphics.renderBackground(ground,620);
+
         //pipe
         Pipes_draw(graphics);
         //score
-        score_text=convert_into_pointer(to_string(score),score_text);
-        graphics.renderText(score_text,SCREEN_WIDTH/2-10*(strlen(score_text)),10,color_white,graphics.font_score);
+        if(menu==false)
+        {
+            score_text=convert_into_pointer(to_string(score),score_text);
+            graphics.renderText(score_text,SCREEN_WIDTH/2-10*(strlen(score_text)),10,color_white,graphics.font_score);
+        }
+        ///menu
+        if(menu)
+        {
+            //render
+            graphics.renderTexture(graphics.flappybird,flappybird_mouse.x,flappybird_mouse.y);
+            graphics.renderTexture(graphics.ready,ready_mouse.x,ready_mouse.y);
+            graphics.renderTexture(graphics.tap,tap_mouse.x,tap_mouse.y);
+            graphics.renderTexture(graphics.playbutton,265,507);
+            //winding
+            flappybird_mouse.winding();
+            ready_mouse.winding();
+            tap_mouse.winding();
+            //check click play button
+            SDL_GetMouseState(&menu_mouse.x,&menu_mouse.y);
+            if(check_Click(menu_mouse,menu_rect))
+            {
+                if(e.type==SDL_MOUSEBUTTONDOWN)
+                {
+                    if(e.button.button==SDL_BUTTON_LEFT)
+                    {
+                        //delete menu
+                        menu=false;
+                        bird_mouse={100,SCREEN_HEIGHT/2-100};
+                    }
+                }
+            }
+        }
         if(!game_over)
         {
             ///jump
-            if(e.type==SDL_KEYDOWN)
+            if(e.type==SDL_KEYDOWN&&!menu)
             {
                 if(!flying) flying=true;
                 bird_mouse.speed=-25;
-                bird_mouse.check=false;
                 //sound
                 graphics.playMusic(graphics.flap);
             }
-            else bird_mouse.check=true;
             ///scroll
             bgr.scroll();
             ground.scroll();
@@ -177,6 +212,10 @@ int main(int argc,char* args[])
             ///render
             //bird
             graphics.renderBIRD(bird_mouse.x,bird_mouse.y-36,bird,bird_mouse.speed);
+            if(menu)
+            {
+                bird_mouse.winding();
+            }
 //            SDL_SetRenderDrawColor(graphics.renderer,255,0,0,255);
 //            SDL_Rect rect={bird_mouse.x,bird_mouse.y-36,51,36};
 //            SDL_RenderDrawRect(graphics.renderer,&rect);
@@ -205,7 +244,7 @@ int main(int argc,char* args[])
             //bird
             graphics.renderBIRD(bird_mouse.x,bird_mouse.y-36,bird,90);
             //game over
-            graphics.renderTexture(graphics.game_over,SCREEN_WIDTH/2-160,SCREEN_HEIGHT/2-250);
+            graphics.renderTexture(graphics.game_over,SCREEN_WIDTH/2-160,SCREEN_HEIGHT/2-300);
             //score board
             graphics.renderTexture(graphics.board,SCREEN_WIDTH/2-80,SCREEN_HEIGHT/2-215);
             //score
@@ -230,7 +269,7 @@ int main(int argc,char* args[])
             }
             ///restart
             SDL_GetMouseState(&restart_mouse.x,&restart_mouse.y);
-            if(check_Click_Restart(restart_mouse,restart_rect))
+            if(check_Click(restart_mouse,restart_rect))
             {
                 if(e.type==SDL_MOUSEBUTTONDOWN)
                 {

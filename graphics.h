@@ -48,9 +48,10 @@ struct Graphics
 {
     SDL_Window* window;
     SDL_Renderer* renderer;
-    SDL_Texture* bird1,*bird2,*bird3,*game_over,*board;
+    SDL_Texture* bird1,*bird2,*bird3,*game_over,*board,*flappybird,*tap,*playbutton,*ready,*new_record;
     TTF_Font *font_score,*font_board;
     Mix_Chunk *point,*flap,*die,*highscore,*hit;
+    Mix_Music *music;
     void logErrorAndExit(const char* msg,const char* error)
     {
         SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION,SDL_LOG_PRIORITY_ERROR,"%s : %s",msg,error);
@@ -111,7 +112,18 @@ struct Graphics
         {
             logErrorAndExit("Could not load sound! SDL_mixer Error: %s", Mix_GetError());
         }
+        SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION,SDL_LOG_PRIORITY_INFO,"Loading %s",path);
         return chunk;
+    }
+    Mix_Music *loadMusic(const char* path)
+    {
+        Mix_Music *music = Mix_LoadMUS(path);
+        if (music == nullptr)
+        {
+            logErrorAndExit("Could not load music! SDL_mixer Error: %s", Mix_GetError());
+        }
+        SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION,SDL_LOG_PRIORITY_INFO,"Loading %s",path);
+        return music;
     }
      void init()
      {
@@ -119,15 +131,26 @@ struct Graphics
         bird1=loadTexture("fbimg/bird1.PNG");
         bird2=loadTexture("fbimg/bird2.PNG");
         bird3=loadTexture("fbimg/bird3.PNG");
+
         board=loadTexture("fbimg/scoreboard.PNG");
-        game_over=loadTexture("fbimg/gameover.PNG");
+        game_over=loadTexture("fbimg/gameover1.PNG");
+
+        flappybird=loadTexture("fbimg/flappybird.PNG");
+        tap=loadTexture("fbimg/tap.PNG");
+        playbutton=loadTexture("fbimg/playbutton.PNG");
+        ready=loadTexture("fbimg/ready.PNG");
+        new_record=loadTexture("fbimg/new.PNG");
+
         font_score=loadFont("font/fBirdFont.TTF",60);
         font_board=loadFont("font/fBirdFont.TTF",40);
+
         point=loadSound("sound/point.WAV");
         flap=loadSound("sound/flap.WAV");
         die=loadSound("sound/die.WAV");
         highscore=loadSound("sound/highscore.WAV");
         hit=loadSound("sound/hit.WAV");
+
+        music=loadMusic("sound/Beanie.MP3");
      }
      void renderTexture(SDL_Texture* texture,int x,int y)
      {
@@ -199,7 +222,13 @@ struct Graphics
             Mix_PlayChannel(-1,gChunk,0);
         }
      }
-
+     void play(Mix_Music *music)
+    {
+        if (Mix_PlayingMusic() == 0)
+        {
+            Mix_PlayMusic(music,-1);
+        }
+    }
 };
 vector<Pipe>Pipes;
 bool ss(Pipe x,Pipe y)

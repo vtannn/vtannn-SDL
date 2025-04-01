@@ -58,6 +58,7 @@ char *convert_into_pointer(string score_string,char *score_text)
 }
 bool check_Click(Mouse mouse,SDL_Rect rect)
 {
+    SDL_GetMouseState(&mouse.x,&mouse.y);
     if(mouse.x>rect.x&&mouse.x<rect.x+rect.w&&mouse.y>rect.y&&mouse.y<rect.y+rect.h) return true;
     return false;
 }
@@ -100,6 +101,7 @@ int main(int argc,char* args[])
 
     pipe=graphics.loadTexture("fbimg/pipe.PNG");
     Uint32 last_pipe=SDL_GetTicks()-pipe_frequency;
+    Mouse pipe_bot={0,170},pipe_top={0,0};
 
     SDL_Color color_white={255,255,255,0},color_pink={255,0,255,0},color_red={255,0,0,0};
 
@@ -111,6 +113,9 @@ int main(int argc,char* args[])
     SDL_Rect menu_rect={265,497,200,112};
 
     Mouse flappybird_mouse={159,131},ready_mouse={275,310},tap_mouse={290,367};
+
+    Mouse pause_mouse;
+    SDL_Rect pause_rect={10,10,40,44};
 
     SDL_Event e;
     int x,y;
@@ -156,45 +161,30 @@ int main(int argc,char* args[])
                 hit=true;
             }
         }
-        ///gravity
-        if(flying)
-        {
-            bird_mouse.speed+=4;
-            bird_mouse.speed=min(bird_mouse.speed,20);
-            bird_mouse.turnSouth();
-            bird_mouse.move();
-            bird_mouse.y=min(bird_mouse.y,620);
-        }
-        ///render
+        ///render eternally
         //background
         SDL_RenderClear(graphics.renderer);
         graphics.renderBackground(bgr,0);
         graphics.renderBackground(ground,620);
 
-        //pipe
-        Pipes_draw(graphics);
-        //score
-        if(menu==false)
-        {
-            score_text=convert_into_pointer(to_string(score),score_text);
-            graphics.renderText(score_text,SCREEN_WIDTH/2-10*(strlen(score_text)),10,color_white,graphics.font_score);
-        }
         ///menu
         if(menu)
         {
             //sound
             graphics.play(graphics.music);
-            //render
+            ///render
             graphics.renderTexture(graphics.flappybird,flappybird_mouse.x,flappybird_mouse.y);
             graphics.renderTexture(graphics.ready,ready_mouse.x,ready_mouse.y);
             graphics.renderTexture(graphics.tap,tap_mouse.x,tap_mouse.y);
             graphics.renderTexture(graphics.playbutton,265,507);
+            graphics.renderBIRD(bird_mouse.x,bird_mouse.y-36,bird,bird_mouse.speed);
+            bird.tick();
             //winding
             flappybird_mouse.winding();
             ready_mouse.winding();
             tap_mouse.winding();
+            bird_mouse.winding();
             //check click play button
-            SDL_GetMouseState(&menu_mouse.x,&menu_mouse.y);
             if(check_Click(menu_mouse,menu_rect))
             {
                 if(e.type==SDL_MOUSEBUTTONDOWN)
@@ -209,114 +199,156 @@ int main(int argc,char* args[])
                 }
             }
         }
-        if(!game_over)
-        {
-            ///jump
-            if(e.type==SDL_KEYDOWN&&!menu)
-            {
-                if(!flying) flying=true;
-                bird_mouse.speed=-25;
-                //sound
-                graphics.playMusic(graphics.flap);
-            }
-            ///scroll
-            bgr.scroll();
-            ground.scroll();
-            bird.tick();
-            ///render
-            //bird
-            graphics.renderBIRD(bird_mouse.x,bird_mouse.y-36,bird,bird_mouse.speed);
-            if(menu)
-            {
-                bird_mouse.winding();
-            }
-//            SDL_SetRenderDrawColor(graphics.renderer,255,0,0,255);
-//            SDL_Rect rect={bird_mouse.x,bird_mouse.y-36,51,36};
-//            SDL_RenderDrawRect(graphics.renderer,&rect);
-            //pipe
-            if(flying)
-            {
-                Pipes_delete();
-                Pipes_update();
-                time_now=SDL_GetTicks();
-                if(time_now-last_pipe>=pipe_frequency)
-                {
-                    Pipe next_pipe;
-                    next_pipe={pipe,SCREEN_WIDTH,0,false};
-                    //random
-                    int a=-75,b=75;
-                    int random=rand()%(b-a+1)+a;
-                    next_pipe.height=random;
-                    Pipes.push_back(next_pipe);
-                    last_pipe=time_now;
-                }
-            }
-        }
         else
         {
             ///render
-            //bird
-            graphics.renderBIRD(bird_mouse.x,bird_mouse.y-36,bird,90);
-            //game over
-            graphics.renderTexture(graphics.game_over,SCREEN_WIDTH/2-160,SCREEN_HEIGHT/2-300);
-            //score board
-            graphics.renderTexture(graphics.board,SCREEN_WIDTH/2-80,SCREEN_HEIGHT/2-215);
+            //pipe
+            Pipes_draw(graphics,pipe_bot.y,pipe_top.y);
+            //pipe_bot.winding();
+            //pipe_bot.winding();
             //score
-            char *score_board=convert_into_pointer("SCORE",score_board);
-            graphics.renderText(score_board,SCREEN_WIDTH/2-55,SCREEN_HEIGHT/2-180,color_pink,graphics.font_board);
-
-            score_board=convert_into_pointer(to_string(score),score_board);
-            graphics.renderText(score_board,SCREEN_WIDTH/2-strlen(score_board)*8,SCREEN_HEIGHT/2-130,color_pink,graphics.font_board);
-            //high score
-            score_board=convert_into_pointer("BEST",score_board);
-            graphics.renderText(score_board,SCREEN_WIDTH/2-44,SCREEN_HEIGHT/2-80,color_red,graphics.font_board);
-
-            score_board=convert_into_pointer(to_string(high_score),score_board);
-            graphics.renderText(score_board,SCREEN_WIDTH/2-strlen(score_board)*8,SCREEN_HEIGHT/2-30,color_red,graphics.font_board);
-            //restart
-            graphics.renderTexture(restart_texture,restart_rect.x,restart_rect.y);
-            //sound
-            if(score==high_score)
-            {
-                if(congratulation==false)
-                {
-                    graphics.playMusic(graphics.highscore);
-                    congratulation=true;
-                }
-                //new record
-                if(score>new_record)
-                {
-                    if(strobe>=new_record_cooldown)
-                    {
-                        graphics.renderTexture(graphics.new_record,SCREEN_WIDTH/2+43,SCREEN_HEIGHT/2-80);
-                        strobe=0;
-                    }
-                    strobe++;
-                }
-            }
-            else graphics.play(graphics.music);
-            ///restart
-            SDL_GetMouseState(&restart_mouse.x,&restart_mouse.y);
-            if(check_Click(restart_mouse,restart_rect))
+            score_text=convert_into_pointer(to_string(score),score_text);
+            graphics.renderText(score_text,SCREEN_WIDTH/2-10*(strlen(score_text)),10,color_white,graphics.font_score);
+            ///check click pause and resume button
+            if(check_Click(pause_mouse,pause_rect))
             {
                 if(e.type==SDL_MOUSEBUTTONDOWN)
                 {
                     if(e.button.button==SDL_BUTTON_LEFT)
                     {
-                        //reset game
-                        game_over=false;
-                        bird_mouse={100,SCREEN_HEIGHT/2-100};
-                        Pipes.clear();
-                        flying=false;
-                        die=false;
-                        congratulation=false;
-                        hit=false;
-                        new_record=max(new_record,high_score);
-                        score=0;
-                        game_speed=5;
-                        pipe_frequency=3000;
-                        Mix_Pause(-1);
-                        Mix_HaltMusic();
+                        if(pause_game)
+                        {
+                            time_resume=SDL_GetTicks();
+                            last_pipe=time_resume-(time_pause-last_pipe);
+                        }
+                        else time_pause=SDL_GetTicks();
+                        pause_game=1-pause_game;
+                        //cout<<time_delay<<endl;
+                    }
+                }
+            }
+            if(flying&&pause_game==false)
+            {
+                ///gravity
+                if(flying)
+                {
+                    bird_mouse.speed+=4;
+                    bird_mouse.speed=min(bird_mouse.speed,20);
+                    bird_mouse.turnSouth();
+                    bird_mouse.move();
+                    bird_mouse.y=min(bird_mouse.y,620);
+                }
+            }
+            if(!game_over)
+            {
+                ///pause game
+                if(pause_game==false)
+                {
+                    ///scroll
+                    bgr.scroll();
+                    ground.scroll();
+                    bird.tick();
+                    if(flying) Pipes_update();
+                    ///jump
+                    if(e.type==SDL_KEYDOWN&&!menu)
+                    {
+                        if(!flying) flying=true;
+                        bird_mouse.speed=-25;
+                        //sound
+                        graphics.playMusic(graphics.flap);
+                    }
+                    //resume button
+                    graphics.renderTexture(graphics.resume,10,10);
+                    //pipe
+                    if(flying)
+                    {
+                        Pipes_delete();
+                        time_now=SDL_GetTicks();
+                        if(time_now-last_pipe>=pipe_frequency)
+                        {
+                            Pipe next_pipe;
+                            next_pipe={pipe,SCREEN_WIDTH,0,false};
+                            //random
+                            int a=-75,b=75;
+                            int random=rand()%(b-a+1)+a;
+                            next_pipe.height=random;
+                            Pipes.push_back(next_pipe);
+                            last_pipe=time_now;
+                        }
+                    }
+                }
+                else graphics.renderTexture(graphics.pause,10,10);
+                //bird
+                graphics.renderBIRD(bird_mouse.x,bird_mouse.y-36,bird,bird_mouse.speed);
+//              SDL_SetRenderDrawColor(graphics.renderer,255,0,0,255);
+//              SDL_Rect rect={bird_mouse.x,bird_mouse.y-36,51,36};
+//              SDL_RenderDrawRect(graphics.renderer,&rect);
+            }
+            else
+            {
+                ///render
+                //bird
+                graphics.renderBIRD(bird_mouse.x,bird_mouse.y-36,bird,90);
+                //game over
+                graphics.renderTexture(graphics.game_over,SCREEN_WIDTH/2-160,SCREEN_HEIGHT/2-300);
+                //score board
+                graphics.renderTexture(graphics.board,SCREEN_WIDTH/2-80,SCREEN_HEIGHT/2-215);
+                //score
+                char *score_board=convert_into_pointer("SCORE",score_board);
+                graphics.renderText(score_board,SCREEN_WIDTH/2-55,SCREEN_HEIGHT/2-180,color_pink,graphics.font_board);
+
+                score_board=convert_into_pointer(to_string(score),score_board);
+                graphics.renderText(score_board,SCREEN_WIDTH/2-strlen(score_board)*8,SCREEN_HEIGHT/2-130,color_pink,graphics.font_board);
+                //high score
+                score_board=convert_into_pointer("BEST",score_board);
+                graphics.renderText(score_board,SCREEN_WIDTH/2-44,SCREEN_HEIGHT/2-80,color_red,graphics.font_board);
+
+                score_board=convert_into_pointer(to_string(high_score),score_board);
+                graphics.renderText(score_board,SCREEN_WIDTH/2-strlen(score_board)*8,SCREEN_HEIGHT/2-30,color_red,graphics.font_board);
+                //restart
+                graphics.renderTexture(restart_texture,restart_rect.x,restart_rect.y);
+                //sound
+                if(score==high_score)
+                {
+                    if(congratulation==false)
+                    {
+                        graphics.playMusic(graphics.highscore);
+                        congratulation=true;
+                    }
+                    //new record
+                    if(score>new_record)
+                    {
+                        if(strobe>=new_record_cooldown)
+                        {
+                            graphics.renderTexture(graphics.new_record,SCREEN_WIDTH/2+43,SCREEN_HEIGHT/2-80);
+                            strobe=0;
+                        }
+                        strobe++;
+                    }
+                }
+                else graphics.play(graphics.music);
+                ///restart
+                if(check_Click(restart_mouse,restart_rect))
+                {
+                    if(e.type==SDL_MOUSEBUTTONDOWN)
+                    {
+                        if(e.button.button==SDL_BUTTON_LEFT)
+                        {
+                            //reset game
+                            game_over=false;
+                            bird_mouse={100,SCREEN_HEIGHT/2-100};
+                            Pipes.clear();
+                            flying=false;
+                            die=false;
+                            congratulation=false;
+                            hit=false;
+                            new_record=max(new_record,high_score);
+                            score=0;
+                            game_speed=5;
+                            pipe_frequency=3000;
+                            Mix_Pause(-1);
+                            Mix_HaltMusic();
+                        }
                     }
                 }
             }

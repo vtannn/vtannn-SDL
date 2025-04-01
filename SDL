@@ -43,7 +43,7 @@ void check_pass_Pipe(Mouse bird_mouse,Graphics graphics)
             score++;
             pipe.pass=true;
             //sound
-            graphics.playMusic(graphics.point);
+            graphics.playChunk(graphics.point);
             break;
         }
     }
@@ -91,6 +91,9 @@ int main(int argc,char* args[])
     ScrollingBackground ground;
     ground.setTexture(graphics.loadTexture("fbimg/ground.PNG"));
 
+    ScrollingBackground rain;
+    rain.setTexture(graphics.loadTexture("fbimg/rain.PNG"));
+
     Mouse bird_mouse;
     bird_mouse={326,282};
 
@@ -101,7 +104,6 @@ int main(int argc,char* args[])
 
     pipe=graphics.loadTexture("fbimg/pipe.PNG");
     Uint32 last_pipe=SDL_GetTicks()-pipe_frequency;
-    Mouse pipe_bot={0,170},pipe_top={0,0};
 
     SDL_Color color_white={255,255,255,0},color_pink={255,0,255,0},color_red={255,0,0,0};
 
@@ -126,11 +128,12 @@ int main(int argc,char* args[])
             if(e.type==SDL_QUIT) quit=true;
         }
         ///acceleration
-        if(score%5==0)
+        if(score%3==0)
         {
             if(acceleration&&game_speed<10)
             {
                 game_speed++;
+                if(pipe_frequency>1500)
                 pipe_frequency-=500;
                 acceleration=false;
             }
@@ -147,7 +150,7 @@ int main(int argc,char* args[])
             //sound
             if(!die)
             {
-                graphics.playMusic(graphics.die);
+                graphics.playChunk(graphics.die);
                 die=true;
             }
         }
@@ -157,7 +160,7 @@ int main(int argc,char* args[])
             //sound
             if(!hit)
             {
-                graphics.playMusic(graphics.hit);
+                graphics.playChunk(graphics.hit);
                 hit=true;
             }
         }
@@ -165,13 +168,14 @@ int main(int argc,char* args[])
         //background
         SDL_RenderClear(graphics.renderer);
         graphics.renderBackground(bgr,0);
+        graphics.renderRain(rain,0);
         graphics.renderBackground(ground,620);
 
         ///menu
         if(menu)
         {
             //sound
-            graphics.play(graphics.music);
+            graphics.playMusic(graphics.music);
             ///render
             graphics.renderTexture(graphics.flappybird,flappybird_mouse.x,flappybird_mouse.y);
             graphics.renderTexture(graphics.ready,ready_mouse.x,ready_mouse.y);
@@ -201,11 +205,11 @@ int main(int argc,char* args[])
         }
         else
         {
+            ///sound
+            graphics.playMusic(graphics.background_music);
             ///render
             //pipe
-            Pipes_draw(graphics,pipe_bot.y,pipe_top.y);
-            //pipe_bot.winding();
-            //pipe_bot.winding();
+            Pipes_draw(graphics);
             //score
             score_text=convert_into_pointer(to_string(score),score_text);
             graphics.renderText(score_text,SCREEN_WIDTH/2-10*(strlen(score_text)),10,color_white,graphics.font_score);
@@ -247,6 +251,7 @@ int main(int argc,char* args[])
                     ///scroll
                     bgr.scroll();
                     ground.scroll();
+                    rain.scroll_inverse();
                     bird.tick();
                     if(flying) Pipes_update();
                     ///jump
@@ -255,7 +260,7 @@ int main(int argc,char* args[])
                         if(!flying) flying=true;
                         bird_mouse.speed=-25;
                         //sound
-                        graphics.playMusic(graphics.flap);
+                        graphics.playChunk(graphics.flap);
                     }
                     //resume button
                     graphics.renderTexture(graphics.resume,10,10);
@@ -312,7 +317,7 @@ int main(int argc,char* args[])
                 {
                     if(congratulation==false)
                     {
-                        graphics.playMusic(graphics.highscore);
+                        graphics.playChunk(graphics.highscore);
                         congratulation=true;
                     }
                     //new record
@@ -326,7 +331,6 @@ int main(int argc,char* args[])
                         strobe++;
                     }
                 }
-                else graphics.play(graphics.music);
                 ///restart
                 if(check_Click(restart_mouse,restart_rect))
                 {
@@ -347,7 +351,6 @@ int main(int argc,char* args[])
                             game_speed=5;
                             pipe_frequency=3000;
                             Mix_Pause(-1);
-                            Mix_HaltMusic();
                         }
                     }
                 }

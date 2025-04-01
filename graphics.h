@@ -10,9 +10,27 @@ struct Pipe
     int x=SCREEN_WIDTH;
     int height;
     bool pass;
+    int up_down=1;
+    int wait=0;
+    int acceleration=5;
     void update()
     {
-        if(x>=-300) x-=game_speed;
+        x-=game_speed;
+    }
+    void winding()
+    {
+        if(wait>=winding_cooldown)
+        {
+            height+=up_down*acceleration;
+            if(acceleration>15)
+            {
+                acceleration=3;
+                up_down*=-1;
+            }
+            else acceleration+=3;
+            wait=0;
+        }
+        wait++;
     }
 };
 struct ScrollingBackground
@@ -32,6 +50,11 @@ struct ScrollingBackground
         scrollingOffset-=game_speed;
         if(scrollingOffset<0) scrollingOffset=width;
     }
+    void scroll_inverse()
+    {
+        scrollingOffset+=game_speed+5;
+        if(scrollingOffset>height) scrollingOffset=0;
+    }
 };
 struct Sprite
 {
@@ -48,10 +71,10 @@ struct Graphics
 {
     SDL_Window* window;
     SDL_Renderer* renderer;
-    SDL_Texture* bird1,*bird2,*bird3,*game_over,*board,*flappybird,*tap,*playbutton,*ready,*new_record;
+    SDL_Texture* bird1,*bird2,*bird3,*game_over,*board,*flappybird,*tap,*playbutton,*ready,*new_record,*resume,*pause;
     TTF_Font *font_score,*font_board;
     Mix_Chunk *point,*flap,*die,*highscore,*hit;
-    Mix_Music *music;
+    Mix_Music *music,*background_music;
     void logErrorAndExit(const char* msg,const char* error)
     {
         SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION,SDL_LOG_PRIORITY_ERROR,"%s : %s",msg,error);
@@ -75,8 +98,7 @@ struct Graphics
         }
         if( Mix_OpenAudio( 44100, MIX_DEFAULT_FORMAT, 2, 2048 ) < 0 )
         {
-            logErrorAndExit( "SDL_mixer could not initialize! SDL_mixer Error: %s\n",
-            Mix_GetError() );
+            logErrorAndExit("SDL_mixer could not initialize! SDL_mixer Error: %s\n",Mix_GetError());
         }
     }
     void prepareScene(SDL_Texture* background)
@@ -141,6 +163,9 @@ struct Graphics
         ready=loadTexture("fbimg/ready.PNG");
         new_record=loadTexture("fbimg/new.PNG");
 
+        resume=loadTexture("fbimg/resume.PNG");
+        pause=loadTexture("fbimg/pause.PNG");
+
         font_score=loadFont("font/fBirdFont.TTF",60);
         font_board=loadFont("font/fBirdFont.TTF",40);
 
@@ -151,6 +176,7 @@ struct Graphics
         hit=loadSound("sound/hit.WAV");
 
         music=loadMusic("sound/Beanie.MP3");
+        background_music=loadMusic("sound/Bleach.MP3");
      }
      void renderTexture(SDL_Texture* texture,int x,int y)
      {
@@ -194,10 +220,15 @@ struct Graphics
      {
          renderTextureAngle(sprite.texture,x,y,angle);
      }
-     void renderBackground(ScrollingBackground bgr,int x)
+     void renderBackground(ScrollingBackground bgr,int y)
      {
-         renderTexture(bgr.texture,bgr.scrollingOffset,x);
-         renderTexture(bgr.texture,bgr.scrollingOffset-bgr.width,x);
+         renderTexture(bgr.texture,bgr.scrollingOffset,y);
+         renderTexture(bgr.texture,bgr.scrollingOffset-bgr.width,y);
+     }
+     void renderRain(ScrollingBackground bgr,int x)
+     {
+         renderTexture(bgr.texture,x,bgr.scrollingOffset);
+         renderTexture(bgr.texture,x,bgr.scrollingOffset-bgr.height);
      }
      void renderText(const char* text,int x,int y,SDL_Color textColor,TTF_Font *font)
      {
@@ -215,16 +246,16 @@ struct Graphics
         SDL_FreeSurface(surface);
         SDL_DestroyTexture(text_texture);
      }
-     void playMusic(Mix_Chunk* gChunk)
+     void playChunk(Mix_Chunk* chunk)
      {
-        if (gChunk != nullptr)
+        if(chunk!=nullptr)
         {
-            Mix_PlayChannel(-1,gChunk,0);
+            Mix_PlayChannel(-1,chunk,0);
         }
      }
-     void play(Mix_Music *music)
+     void playMusic(Mix_Music *music)
     {
-        if (Mix_PlayingMusic() == 0)
+        if(Mix_PlayingMusic()== 0)
         {
             Mix_PlayMusic(music,-1);
         }
@@ -248,6 +279,7 @@ void Pipes_update()
     for(int i=0;i<Pipes.size();i++)
     {
         Pipes[i].update();
+        Pipes[i].winding();
     }
 }
 void Pipes_draw(Graphics graphics)

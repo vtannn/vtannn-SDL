@@ -17,8 +17,10 @@ int strobe=0;
 int winding_cooldown=5;
 bool die=false,congratulation=false,hit=false,menu=true;
 bool acceleration=true;
+bool pause_game=false;
 Uint32 pipe_frequency=3000;
 Uint32 time_now;
+Uint32 time_pause,time_resume;
 SDL_Texture *pipe;
 char *score_text;
 #endif // DEFS_H

@@ -46,6 +46,8 @@ int main(int argc,char* args[])
             }
             if(!game_over)
             {
+                //bird
+                GAME.RENDER_BIRD();
                 ///pause game
                 if(pause_game==false)
                 {
@@ -61,8 +63,18 @@ int main(int argc,char* args[])
                 else
                 //pause button
                 GAME.RENDER_PAUSE_BUTTON();
-                //bird
-                GAME.RENDER_BIRD();
+                ///mute background music
+                GAME.CHECK_CLICKED_MUTE_AND_UNMUTE_BUTTON();
+                if(muted==false)
+                {
+                    GAME.RENDER_UNMUTE_BUTTON();
+                    Mix_ResumeMusic();
+                }
+                else
+                {
+                    GAME.RENDER_MUTE_BUTTON();
+                    Mix_PauseMusic();
+                }
             }
             else
             {
@@ -75,5 +87,5 @@ int main(int argc,char* args[])
         GAME.PRESENT_RENDERER();
         SDL_Delay(40);
     }
-
+    GAME.DESTROY_AND_QUIT();
 }

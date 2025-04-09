@@ -71,9 +71,9 @@ struct Graphics
 {
     SDL_Window* window;
     SDL_Renderer* renderer;
-    SDL_Texture* bird1,*bird2,*bird3,*game_over,*board,*flappybird,*tap,*playbutton,*ready,*new_record,*resume,*pause;
+    SDL_Texture* bird1,*bird2,*bird3,*game_over,*board,*flappybird,*tap,*playbutton,*ready,*new_record,*resume,*pause,*mute,*unmute;
     TTF_Font *font_score,*font_board;
-    Mix_Chunk *point,*flap,*die,*highscore,*hit;
+    Mix_Chunk *point,*flap,*die,*highscore,*hit,*losing;
     Mix_Music *music,*background_music;
     void logErrorAndExit(const char* msg,const char* error)
     {
@@ -162,6 +162,8 @@ struct Graphics
         playbutton=loadTexture("fbimg/playbutton.PNG");
         ready=loadTexture("fbimg/ready.PNG");
         new_record=loadTexture("fbimg/new.PNG");
+        mute=loadTexture("fbimg/mute.PNG");
+        unmute=loadTexture("fbimg/unmute.PNG");
 
         resume=loadTexture("fbimg/resume.PNG");
         pause=loadTexture("fbimg/pause.PNG");
@@ -174,6 +176,7 @@ struct Graphics
         die=loadSound("sound/die.WAV");
         highscore=loadSound("sound/highscore.WAV");
         hit=loadSound("sound/hit.WAV");
+        losing=loadSound("sound/losing.WAV");
 
         music=loadMusic("sound/Beanie.MP3");
         background_music=loadMusic("sound/Bleach.MP3");
@@ -212,9 +215,9 @@ struct Graphics
          SDL_DestroyWindow(window);
          SDL_DestroyRenderer(renderer);
          IMG_Quit();
-         SDL_Quit();
          TTF_Quit();
          Mix_Quit();
+         SDL_Quit();
      }
      void renderBIRD(int x,int y,Sprite &sprite,int angle)
      {
@@ -255,6 +258,7 @@ struct Graphics
      }
      void playMusic(Mix_Music *music)
     {
+        if(music==nullptr) return;
         if(Mix_PlayingMusic()== 0)
         {
             Mix_PlayMusic(music,-1);

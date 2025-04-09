@@ -35,6 +35,9 @@ struct Game
     Mouse pause_mouse;
     SDL_Rect pause_rect={10,10,40,44};
 
+    Mouse mute_mouse;
+    SDL_Rect mute_rect={70,10,40,44};
+
     SDL_Event e;
     void CHECK_QUIT_GAME()
     {
@@ -108,7 +111,6 @@ struct Game
         graphics.renderBackground(bgr,0);
         graphics.renderRain(rain,0);
         graphics.renderBackground(ground,620);
-        rain.scroll_inverse();
     }
     void MENU()
     {
@@ -172,6 +174,19 @@ struct Game
             }
         }
     }
+    void CHECK_CLICKED_MUTE_AND_UNMUTE_BUTTON()
+    {
+        if(check_Click(mute_mouse,mute_rect))
+        {
+            if(e.type==SDL_MOUSEBUTTONDOWN)
+            {
+                if(e.button.button==SDL_BUTTON_LEFT)
+                {
+                    muted=1-muted;
+                }
+            }
+        }
+    }
     void GRAVITY()
     {
         bird_mouse.speed+=4;
@@ -185,6 +200,7 @@ struct Game
         bgr.scroll();
         ground.scroll();
         bird.tick();
+        rain.scroll_inverse();
         if(flying) Pipes_update();
     }
     void JUMP()
@@ -223,6 +239,14 @@ struct Game
     void RENDER_PAUSE_BUTTON()
     {
         graphics.renderTexture(graphics.pause,10,10);
+    }
+    void RENDER_MUTE_BUTTON()
+    {
+        graphics.renderTexture(graphics.mute,70,10);
+    }
+    void RENDER_UNMUTE_BUTTON()
+    {
+        graphics.renderTexture(graphics.unmute,70,10);
     }
     void RENDER_BIRD()
     {
@@ -310,6 +334,42 @@ struct Game
     void PRESENT_RENDERER()
     {
         graphics.presentRenderer();
+    }
+    void DESTROY_AND_QUIT()
+    {
+        DestroyTexture(graphics.bird1);
+        DestroyTexture(graphics.bird2);
+        DestroyTexture(graphics.bird3);
+        DestroyTexture(graphics.board);
+        DestroyTexture(graphics.game_over);
+        DestroyTexture(graphics.tap);
+        DestroyTexture(graphics.flappybird);
+        DestroyTexture(graphics.ready);
+        DestroyTexture(graphics.playbutton);
+        DestroyTexture(graphics.new_record);
+        DestroyTexture(graphics.resume);
+        DestroyTexture(graphics.pause);
+        DestroyTexture(graphics.mute);
+        DestroyTexture(graphics.unmute);
+
+        CloseFont(graphics.font_board);
+        CloseFont(graphics.font_score);
+
+        FreeChunk(graphics.hit);
+        FreeChunk(graphics.flap);
+        FreeChunk(graphics.die);
+        FreeChunk(graphics.point);
+        FreeChunk(graphics.highscore);
+        FreeChunk(graphics.losing);
+        FreeMusic(graphics.music);
+        FreeMusic(graphics.background_music);
+
+        DestroyTexture(background);
+        DestroyTexture(ground.texture);
+        DestroyTexture(bgr.texture);
+        DestroyTexture(pipe);
+        DestroyTexture(restart_texture);
+        graphics.QUIT();
     }
 };
 #endif // GAME_H

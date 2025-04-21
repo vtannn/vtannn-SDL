@@ -100,6 +100,7 @@ struct Graphics
         {
             logErrorAndExit("SDL_mixer could not initialize! SDL_mixer Error: %s\n",Mix_GetError());
         }
+        Mix_AllocateChannels(7);
     }
     void prepareScene(SDL_Texture* background)
     {
@@ -265,7 +266,7 @@ struct Graphics
         }
     }
 };
-vector<Pipe>Pipes;
+vector<Pipe>Pipes,Hearts;
 bool ss(Pipe x,Pipe y)
 {
     return x.x>y.x;
@@ -277,6 +278,11 @@ void Pipes_delete()
     {
         Pipes.pop_back();
     }
+    sort(Hearts.begin(),Hearts.end(),ss);
+    while(!Hearts.empty()&&Hearts[Hearts.size()-1].x<-100)
+    {
+        Hearts.pop_back();
+    }
 }
 void Pipes_update()
 {
@@ -285,19 +291,40 @@ void Pipes_update()
         Pipes[i].update();
         Pipes[i].winding();
     }
+    for(int i=0;i<Hearts.size();i++)
+    {
+        Hearts[i].update();
+    }
 }
 void Pipes_draw(Graphics graphics)
 {
+    for(int i=0;i<Hearts.size();i++)
+    {
+        Pipe Heart=Hearts[i];
+        graphics.renderTexture(heart,Heart.x,Heart.height);
+    }
     for(int i=0;i<Pipes.size();i++)
     {
         Pipe pipe=Pipes[i];
         graphics.renderPipe(pipe,170,1);
         graphics.renderPipe(pipe,0,-1);
+
 //        SDL_SetRenderDrawColor(graphics.renderer,255,0,0,255);
 //        SDL_Rect rect={pipe.x,170+pipe_gap-pipe.height,62,300+pipe.height};
 //        SDL_RenderDrawRect(graphics.renderer,&rect);
 //        SDL_Rect rect2={pipe.x,0,62,150-pipe.height};
 //        SDL_RenderDrawRect(graphics.renderer,&rect2);
+    }
+    for(int i=0;i<lives;i++)
+    {
+        graphics.renderTexture(heart,40*i+10,65);
+    }
+}
+void reset_Present()
+{
+    for(int i=0;i<Pipes.size();i++)
+    {
+        Pipes[i].x+=160;
     }
 }
 #endif // GRAPHICS_H

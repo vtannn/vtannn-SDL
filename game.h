@@ -14,7 +14,7 @@ struct Game
 
     ScrollingBackground rain;
 
-    Mouse bird_mouse={326,282};
+    Mouse bird_mouse={325,282};
 
     Sprite bird;
 
@@ -56,6 +56,9 @@ struct Game
         rain.setTexture(graphics.loadTexture("fbimg/rain.PNG"));
         pipe=graphics.loadTexture("fbimg/pipe.PNG");
         restart_texture=graphics.loadTexture("fbimg/restart.PNG");
+        heart=graphics.loadTexture("fbimg/heart.PNG");
+
+        life=graphics.loadSound("sound/life.WAV");
 
         bird.clips.push_back(graphics.bird1);
         bird.clips.push_back(graphics.bird2);
@@ -82,26 +85,65 @@ struct Game
         check_pass_Pipe(bird_mouse,graphics);
         high_score=max(high_score,score);
     }
+    void JUMP()
+    {
+        if(e.type==SDL_KEYDOWN&&!menu)
+        {
+            if(!flying)
+            {
+                flying=true;
+                if(reset)
+                {
+                    reset=false;
+                    last_pipe=SDL_GetTicks()-(reset_time_pause-last_pipe);
+                }
+            }
+            bird_mouse.speed=-25;
+            //sound
+            graphics.playChunk(graphics.flap);
+        }
+    }
     void CHECK_COLLISION()
     {
-        if(check_Collision(bird_mouse))
+        if(check_Collision_Heart(bird_mouse))
         {
-            game_over=true;
-            //sound
+            graphics.playChunk(life);
+            Hearts.pop_back();
+            lives++;
+            lives=min(lives,5);
+        }
+        if(check_Collision_Pipe(bird_mouse)||bird_mouse.y==620)
+        {
+            if(bird_mouse.y==620)
+            {
+                //sound
+                if(!hit)
+                {
+                    graphics.playChunk(graphics.hit);
+                    hit=true;
+                }
+            }
+            else
             if(!die)
             {
                 graphics.playChunk(graphics.die);
                 die=true;
             }
-        }
-        if(bird_mouse.y==620)
-        {
-            game_over=true;
-            //sound
-            if(!hit)
+            if(lives>=0) lives--;
+            if(lives==-1)
             {
-                graphics.playChunk(graphics.hit);
-                hit=true;
+                game_over=true;
+            }
+            else
+            {
+                reset_time_pause=SDL_GetTicks();
+                reset_Present();
+                reset_frequency++;
+                flying=false;
+                reset=true;
+                die=false;
+                hit=false;
+                bird_mouse={100,SCREEN_HEIGHT/2-100};
             }
         }
     }
@@ -203,21 +245,11 @@ struct Game
         rain.scroll_inverse();
         if(flying) Pipes_update();
     }
-    void JUMP()
-    {
-        if(e.type==SDL_KEYDOWN&&!menu)
-        {
-            if(!flying) flying=true;
-            bird_mouse.speed=-25;
-            //sound
-            graphics.playChunk(graphics.flap);
-        }
-    }
     void RENDER_RESUME_BUTTON()
     {
         graphics.renderTexture(graphics.resume,10,10);
     }
-    void CREATE_PIPE()
+    void CREATE_PIPE_AND_HEART()
     {
         if(flying)
         {
@@ -226,13 +258,23 @@ struct Game
             if(time_now-last_pipe>=pipe_frequency)
             {
                 Pipe next_pipe;
-                next_pipe={pipe,SCREEN_WIDTH,0,false};
+                next_pipe={pipe,SCREEN_WIDTH+reset_frequency*160,0,false};
                 //random
                 int a=-75,b=75;
                 int random=rand()%(b-a+1)+a;
                 next_pipe.height=random;
                 Pipes.push_back(next_pipe);
                 last_pipe=time_now;
+                ///heart
+                lives_cooldown++;
+                if(lives_cooldown==3)
+                {
+                    lives_cooldown=0;
+                    a=50,b=500;
+                    random=rand()%(b-a+1)+a;
+                    Pipe Heart={heart,SCREEN_WIDTH+190,random};
+                    Hearts.push_back(Heart);
+                }
             }
         }
     }
@@ -301,7 +343,7 @@ struct Game
         {
             if(lose==false)
             {
-                graphics.playChunk(graphics.losing);
+              //  graphics.playChunk(graphics.losing);
                 lose=true;
             }
         }
@@ -318,6 +360,7 @@ struct Game
                     game_over=false;
                     bird_mouse={100,SCREEN_HEIGHT/2-100};
                     Pipes.clear();
+                    Hearts.clear();
                     flying=false;
                     die=false;
                     congratulation=false;
@@ -325,6 +368,7 @@ struct Game
                     new_record=max(new_record,high_score);
                     score=0;
                     game_speed=5;
+                    lives=0;
                     pipe_frequency=3000;
                     Mix_Pause(-1);
                 }
@@ -361,6 +405,7 @@ struct Game
         FreeChunk(graphics.point);
         FreeChunk(graphics.highscore);
         FreeChunk(graphics.losing);
+        FreeChunk(life);
         FreeMusic(graphics.music);
         FreeMusic(graphics.background_music);
 
@@ -369,6 +414,8 @@ struct Game
         DestroyTexture(bgr.texture);
         DestroyTexture(pipe);
         DestroyTexture(restart_texture);
+        DestroyTexture(heart);
+
         graphics.QUIT();
     }
 };

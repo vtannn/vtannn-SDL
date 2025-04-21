@@ -49,7 +49,7 @@ struct Mouse
         dy=0;
     }
 };
-bool check_Collision(Mouse bird_mouse)
+bool check_Collision_Pipe(Mouse bird_mouse)
 {
     SDL_Rect bird_rect={bird_mouse.x,bird_mouse.y-36,51,36};
     for(int i=0;i<Pipes.size();i++)
@@ -58,6 +58,17 @@ bool check_Collision(Mouse bird_mouse)
         SDL_Rect pipe_bot_rect={pipe.x,170+pipe_gap-pipe.height,62,300+pipe.height};
         SDL_Rect pipe_top_rect={pipe.x,0,62,150-pipe.height};
         if(SDL_HasIntersection(&bird_rect,&pipe_bot_rect)||SDL_HasIntersection(&bird_rect,&pipe_top_rect)) return true;
+    }
+    return false;
+}
+bool check_Collision_Heart(Mouse bird_mouse)
+{
+    SDL_Rect bird_rect={bird_mouse.x,bird_mouse.y-36,51,36};
+    for(int i=0;i<Hearts.size();i++)
+    {
+        Pipe heart=Hearts[i];
+        SDL_Rect heart_rect={heart.x,heart.height,35,30};
+        if(SDL_HasIntersection(&bird_rect,&heart_rect)) return true;
     }
     return false;
 }

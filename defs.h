@@ -15,12 +15,16 @@ int new_record=-1;
 int new_record_cooldown=5;
 int strobe=0;
 int winding_cooldown=5;
+int lives=0,lives_cooldown=0,reset_frequency=0;
 bool die=false,congratulation=false,hit=false,menu=true,lose=false;
 bool acceleration=true;
 bool pause_game=false,muted=false;
+bool reset=false;
 Uint32 pipe_frequency=3000;
 Uint32 time_now;
 Uint32 time_pause,time_resume;
-SDL_Texture *pipe;
+Uint32 reset_time_pause;
+SDL_Texture *pipe,*heart;
+Mix_Chunk *life;
 char *score_text;
 #endif // DEFS_H

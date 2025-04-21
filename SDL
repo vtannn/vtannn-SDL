@@ -15,7 +15,6 @@ int main(int argc,char* args[])
 
     Game GAME;
     GAME.INIT();
-
     while(!quit)
     {
         ///quit game
@@ -51,14 +50,17 @@ int main(int argc,char* args[])
                 ///pause game
                 if(pause_game==false)
                 {
-                    ///scroll
-                    GAME.SCROLL();
+                    if(reset==false)
+                    {
+                        ///scroll
+                        GAME.SCROLL();
+                        //pipe
+                        GAME.CREATE_PIPE_AND_HEART();
+                    }
                     ///jump
                     GAME.JUMP();
                     //resume button
                     GAME.RENDER_RESUME_BUTTON();
-                    //pipe
-                    GAME.CREATE_PIPE();
                 }
                 else
                 //pause button
@@ -69,11 +71,13 @@ int main(int argc,char* args[])
                 {
                     GAME.RENDER_UNMUTE_BUTTON();
                     Mix_ResumeMusic();
+                    Mix_Resume(-1);
                 }
                 else
                 {
                     GAME.RENDER_MUTE_BUTTON();
                     Mix_PauseMusic();
+                    Mix_Pause(-1);
                 }
             }
             else

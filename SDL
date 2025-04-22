@@ -65,13 +65,12 @@ int main(int argc,char* args[])
                 else
                 //pause button
                 GAME.RENDER_PAUSE_BUTTON();
-                ///mute background music
+                ///mute
                 GAME.CHECK_CLICKED_MUTE_AND_UNMUTE_BUTTON();
                 if(muted==false)
                 {
                     GAME.RENDER_UNMUTE_BUTTON();
                     Mix_ResumeMusic();
-                    Mix_Resume(-1);
                 }
                 else
                 {
